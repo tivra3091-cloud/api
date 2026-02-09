@@ -131,6 +131,7 @@ exports.scorecard = async (req, res, next) => {
         const scorecardHTML = await service.scrapingHTML(url);
         
         if (!scorecardHTML) {
+            res.setHeader('Content-Type', 'text/html; charset=utf-8');
             return res.status(404).send(`
                 <html>
                     <body>
@@ -142,8 +143,10 @@ exports.scorecard = async (req, res, next) => {
         }
 
         // Return HTML content directly with proper headers for iframe
+        // Set headers before sending to ensure HTML format
         res.setHeader('Content-Type', 'text/html; charset=utf-8');
-        return res.status(200).send(scorecardHTML);
+        res.setHeader('Cache-Control', 'no-cache');
+        return res.status(200).send(scorecardHTML.toString());
     } catch (error) {
         console.log('Error in scorecard:', error.message, 'URL:', url);
         

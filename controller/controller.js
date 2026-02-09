@@ -142,16 +142,99 @@ exports.scorecard = async (req, res, next) => {
             `);
         }
 
+        // Check if response contains license expiration error
+        const htmlString = scorecardHTML.toString();
+        if (htmlString.includes('License has expired') || htmlString.includes('license has expired') || htmlString.includes('License expired')) {
+            res.setHeader('Content-Type', 'text/html; charset=utf-8');
+            return res.status(403).send(`
+                <html>
+                    <head>
+                        <style>
+                            body {
+                                font-family: Arial, sans-serif;
+                                text-align: center;
+                                padding: 50px;
+                                background-color: #f5f5f5;
+                            }
+                            .error-container {
+                                background: white;
+                                padding: 30px;
+                                border-radius: 10px;
+                                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                                max-width: 500px;
+                                margin: 0 auto;
+                            }
+                            h1 {
+                                color: #d32f2f;
+                                margin-bottom: 20px;
+                            }
+                            p {
+                                color: #666;
+                                line-height: 1.6;
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="error-container">
+                            <h1>License Expired</h1>
+                            <p>The scorecard service license has expired. Please contact the administrator to renew the license.</p>
+                        </div>
+                    </body>
+                </html>
+            `);
+        }
+
         // Return HTML content directly with proper headers for iframe
         // Set headers before sending to ensure HTML format
         res.setHeader('Content-Type', 'text/html; charset=utf-8');
         res.setHeader('Cache-Control', 'no-cache');
-        return res.status(200).send(scorecardHTML.toString());
+        return res.status(200).send(htmlString);
     } catch (error) {
         console.log('Error in scorecard:', error.message, 'URL:', url);
         
         // Return HTML error page
         res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        
+        // Check for license expiration in error message
+        if (error.message.includes('License has expired') || error.message.includes('license has expired') || error.message.includes('License expired')) {
+            return res.status(403).send(`
+                <html>
+                    <head>
+                        <style>
+                            body {
+                                font-family: Arial, sans-serif;
+                                text-align: center;
+                                padding: 50px;
+                                background-color: #f5f5f5;
+                            }
+                            .error-container {
+                                background: white;
+                                padding: 30px;
+                                border-radius: 10px;
+                                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                                max-width: 500px;
+                                margin: 0 auto;
+                            }
+                            h1 {
+                                color: #d32f2f;
+                                margin-bottom: 20px;
+                            }
+                            p {
+                                color: #666;
+                                line-height: 1.6;
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="error-container">
+                            <h1>License Expired</h1>
+                            <p>The scorecard service license has expired. Please contact the administrator to renew the license.</p>
+                        </div>
+                    </body>
+                </html>
+            `);
+        }
+        
         if (error.message.includes('Not found') || error.message.includes('404')) {
             return res.status(404).send(`
                 <html>

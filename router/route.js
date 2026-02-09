@@ -9,4 +9,7 @@ route.get("/matches/:sportId", controller.matchList);
 // Match Details Route
 route.get("/match-details/:matchId", controller.matchDetails);
 
+// Scorecard Route
+route.get("/scorecard/:sportId/:eventId/:sportRadarId", controller.scorecard);
+
 module.exports = route

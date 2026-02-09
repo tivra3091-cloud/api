@@ -101,3 +101,56 @@ exports.matchDetails = async (req, res, next) => {
         });
     }
 }
+
+// Scorecard API - using scorecard endpoint
+exports.scorecard = async (req, res, next) => {
+    let url = '';
+    try {
+        // Get sportId, eventId, and sportRadarId from params or query
+        const sportId = req?.params?.sportId || req?.query?.sportId;
+        const eventId = req?.params?.eventId || req?.query?.eventId;
+        const sportRadarId = req?.params?.sportRadarId || req?.query?.sportRadarId;
+        
+        // API: https://scorecard.oddstrad.com/get-scorecard-iframe/{sportId}/{eventId}/{sportRadarId}
+        // All three parameters are required
+        if (!sportId || !eventId || !sportRadarId) {
+            return res.status(400).json({ 
+                success: false,
+                error: 'Sport ID, Event ID, and Sport Radar ID are required. Use /api/v1/scorecard/{sportId}/{eventId}/{sportRadarId}' 
+            });
+        }
+        
+        url = `https://scorecard.oddstrad.com/get-scorecard-iframe/${sportId}/${eventId}/${sportRadarId}`;
+
+        console.log('Fetching scorecard from URL:', url);
+        const scorecardData = await service.scraping(url);
+        
+        if (!scorecardData) {
+            return res.status(404).json({ 
+                success: false,
+                error: 'No data received from API' 
+            });
+        }
+
+        return res.status(200).json({ 
+            success: true,
+            message: 'Scorecard fetched successfully', 
+            data: scorecardData 
+        });
+    } catch (error) {
+        console.log('Error in scorecard:', error.message, 'URL:', url);
+        
+        if (error.message.includes('Not found') || error.message.includes('404')) {
+            return res.status(404).json({ 
+                success: false,
+                error: 'Scorecard not found for the given parameters' 
+            });
+        }
+        
+        const statusCode = error.message.includes('400') ? 400 : 500;
+        return res.status(statusCode).json({ 
+            success: false,
+            error: error.message || 'Failed to fetch scorecard' 
+        });
+    }
+}

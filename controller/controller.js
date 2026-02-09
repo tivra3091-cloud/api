@@ -1,21 +1,22 @@
 const service = require("../service/service");
 
-// Match List API - using new matchDetails endpoint
+// Match List API - using matches endpoint
 exports.matchList = async (req, res, next) => {
     let url = '';
     try {
         // Get sportId from params or query
         const sportId = req?.params?.sportId || req?.query?.sportId;
         
-        // New API: https://central.zplay1.in/pb/api/v1/events/matchDetails/
-        // Try different formats based on whether sportId is provided
-        url = 'https://central.zplay1.in/pb/api/v1/events/matchDetails/';
-        
-        // If sportId is provided, try appending it or use as query parameter
-        if (sportId) {
-            // First try: append sportId to URL
-            url = `https://central.zplay1.in/pb/api/v1/events/matchDetails/${sportId}`;
+        // API: https://central.zplay1.in/pb/api/v1/events/matches/{sportId}
+        // sportId is required for this endpoint
+        if (!sportId) {
+            return res.status(400).json({ 
+                success: false,
+                error: 'Sport ID is required. Use /api/v1/matches/{sportId}' 
+            });
         }
+        
+        url = `https://central.zplay1.in/pb/api/v1/events/matches/${sportId}`;
 
         console.log('Fetching from URL:', url);
         const matchData = await service.scraping(url);
@@ -35,29 +36,10 @@ exports.matchList = async (req, res, next) => {
     } catch (error) {
         console.log('Error in matchList:', error.message, 'URL:', url);
         
-        // If 404 error with sportId, try without sportId as fallback
         if (error.message.includes('Not found') || error.message.includes('404')) {
-            const sportId = req?.params?.sportId || req?.query?.sportId;
-            if (sportId) {
-                // Try without sportId as fallback
-                try {
-                    const fallbackUrl = 'https://central.zplay1.in/pb/api/v1/events/matchDetails/';
-                    console.log('Trying fallback URL:', fallbackUrl);
-                    const fallbackData = await service.scraping(fallbackUrl);
-                    if (fallbackData) {
-                        return res.status(200).json({ 
-                            success: true,
-                            message: 'Match list fetched successfully', 
-                            data: fallbackData 
-                        });
-                    }
-                } catch (fallbackError) {
-                    console.log('Fallback also failed:', fallbackError.message);
-                }
-            }
             return res.status(404).json({ 
                 success: false,
-                error: 'Match data not found' 
+                error: 'Match data not found for the given sport ID' 
             });
         }
         
